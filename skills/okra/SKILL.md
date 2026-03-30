@@ -1,6 +1,6 @@
 ---
 name: okra
-description: OkraPDF — upload PDFs, read extracted content, ask questions, extract structured data, and manage collections. Covers MCP, CLI, and HTTP.
+description: OkraPDF — upload PDFs, read extracted content, ask questions, extract structured data, run sandbox transforms, and manage collections. Covers MCP, CLI, and HTTP.
 ---
 
 # OkraPDF
@@ -229,6 +229,81 @@ curl -X POST https://api.okrapdf.com/document/doc-abc123/chat/completions \
     "stream": false
   }'
 ```
+
+---
+
+## Sandbox Transforms
+
+Run custom JavaScript next to your documents for deterministic retrieval, filtering, math, and cross-doc comparisons. Best when the agent or user wants to write code, not just ask a single question.
+
+### MCP
+
+```text
+run_sandbox(
+  code: "const docs = await DOCS.list(); return docs.map(d => ({ name: d.file_name, pages: d.total_pages }));",
+  public_doc_ids: ["doc-fac0d10b8ebc4a2ebf13"]
+)
+```
+
+Inside the sandbox:
+
+- `DOCS.list()` → array of docs
+- `DOCS.querySql(docId, sql)` → `{ rows, count, warning?, hint? }`
+- `DOCS.getMarkdown(docId)` / `DOCS.getPage(docId, "1")` → strings
+- `DOCS.getNodes(docId)` / `DOCS.getStatus(docId)` → JSON strings from document endpoints
+- `nodes_fts` auto-initializes on first query for hydrated docs
+
+### HTTP
+
+```bash
+# Private docs via API key
+curl -s https://api.okrapdf.com/v1/sandbox/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "apiKey": "'"$OKRA_API_KEY"'",
+    "code": "const docs = await DOCS.list(); return docs.slice(0, 5).map(d => ({ id: d.id, name: d.file_name }));"
+  }'
+
+# Public docs via docIds (no auth needed)
+curl -s https://api.okrapdf.com/v1/sandbox/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "docIds": ["doc-fac0d10b8ebc4a2ebf13"],
+    "code": "const docId = \"doc-fac0d10b8ebc4a2ebf13\"; return await DOCS.querySql(docId, \"SELECT page_number, substr(value, 1, 220) AS value FROM nodes_fts WHERE nodes_fts MATCH '\''property'\'' LIMIT 5\");"
+  }'
+```
+
+### Pattern: exact retrieval, then math
+
+Use `querySql` first. It is the best primitive for benchmark-style work where you need evidence lines plus deterministic computation.
+
+```javascript
+const docs = await DOCS.list();
+const results = [];
+
+for (const doc of docs) {
+  const line = await DOCS.querySql(
+    doc.id,
+    "SELECT value FROM nodes WHERE value LIKE '%Purchases of property, plant and equipment%' LIMIT 1"
+  );
+  const value = line.rows[0]?.value ?? null;
+  const match = typeof value === "string" ? value.match(/\(([^)]+)\)|([\d,]+)/) : null;
+  results.push({
+    doc: doc.file_name,
+    raw: value,
+    extracted: match ? (match[1] || match[2]) : null,
+  });
+}
+
+return results;
+```
+
+Notes:
+
+- SQL is read-only: `SELECT` and `WITH` only
+- Queryable tables include `nodes`, `nodes_fts`, `edges`, `page_ledger`, `verifications`, `meta`, `findings`
+- Use `nodes_fts MATCH ...` for ranked full-text retrieval
+- Use `nodes.value LIKE ...` when you want exact substring filters
 
 ---
 

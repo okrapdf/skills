@@ -1,6 +1,6 @@
 # OkraPDF Agent Skills
 
-Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document chat, and structured data extraction.
+Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document chat, structured data extraction, and programmable sandbox transforms.
 
 ## Install
 
@@ -19,7 +19,7 @@ npx skills add okrapdf/skills -a claude-code -g
 
 | Skill | Description |
 |-------|-------------|
-| [okra](skills/okra/) | Upload PDFs, read content, ask questions, extract structured data, manage collections — via MCP, CLI, or HTTP |
+| [okra](skills/okra/) | Upload PDFs, read content, ask questions, extract structured data, run sandbox transforms, and manage collections — via MCP, CLI, or HTTP |
 | [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv AI papers, SEC 10-K/10-Q filings |
 
 ## Quick Start
@@ -40,7 +40,10 @@ npx skills add okrapdf/skills -a claude-code -g
 }
 ```
 
-4. Ask your agent: "Upload this PDF and extract all tables"
+4. Ask your agent:
+   - "Upload this PDF and extract all tables"
+   - "Compare capex across these filings with run_sandbox"
+   - "Use DOCS.querySql to pull exact evidence lines, then compute the ratio"
 
 ## Links
 
