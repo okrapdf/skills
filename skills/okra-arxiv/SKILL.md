@@ -146,6 +146,64 @@ extract_data(document_id: "arxiv:2603.XXXXX", prompt: "Extract main results tabl
 extract_data(document_id: "arxiv:2603.YYYYY", prompt: "Extract main results table", json_schema: {...})
 ```
 
+## Checking Coverage
+
+### Browse the manifest
+
+The full list of ingested papers is in [`papers.json`](papers.json) in this skill directory. Each entry has `id`, `title`, `categories`, and `pdf` URL.
+
+### Discover new papers via Semantic Scholar API
+
+Semantic Scholar indexes arxiv papers with rich metadata (abstracts, citations, authors). Use it to find papers, then check if they're in our collection.
+
+```bash
+# Search for recent papers on a topic
+curl -s "https://api.semanticscholar.org/graph/v1/paper/search?query=agentic+RAG&year=2026&fields=externalIds,title,abstract,citationCount&limit=10" | jq '.data[] | {arxiv: .externalIds.ArXiv, title, citations: .citationCount}'
+
+# Look up a specific arxiv paper
+curl -s "https://api.semanticscholar.org/graph/v1/paper/ArXiv:2603.26653?fields=title,abstract,authors.name,citationCount"
+
+# Bulk lookup — check which papers from a list are indexed
+curl -s -X POST "https://api.semanticscholar.org/graph/v1/paper/batch" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": ["ArXiv:2603.26653", "ArXiv:2603.18272"], "fields": "title,externalIds,citationCount"}'
+```
+
+No API key needed for basic use (rate limit: ~100 req/min). For higher limits, get a free key at [semanticscholar.org/product/api](https://www.semanticscholar.org/product/api).
+
+### Discover via arxiv RSS feeds
+
+These are the same feeds used to build this collection:
+
+```
+https://rss.arxiv.org/rss/cs.AI    # Artificial Intelligence
+https://rss.arxiv.org/rss/cs.CL    # Computation and Language (NLP)
+https://rss.arxiv.org/rss/cs.LG    # Machine Learning
+```
+
+Each feed returns the latest ~200 submissions. Parse with any RSS reader or:
+
+```bash
+curl -s "https://rss.arxiv.org/rss/cs.AI" | python3 -c "
+import sys, xml.etree.ElementTree as ET
+root = ET.fromstring(sys.stdin.read())
+for item in root.findall('.//item')[:10]:
+    link = item.find('link').text
+    title = item.find('title').text[:80]
+    aid = link.split('/abs/')[-1]
+    print(f'{aid}  {title}')
+"
+```
+
+### Papers With Code
+
+[paperswithcode.com](https://paperswithcode.com) tracks papers + code repos + benchmarks. Their API is free:
+
+```bash
+# Search papers
+curl -s "https://paperswithcode.com/api/v1/papers/?q=agentic+RAG&items_per_page=5" | jq '.results[] | {title, arxiv_id, abstract}'
+```
+
 ## Available Papers (March 2026 Snapshot)
 
 411 papers from the past 2 weeks across three categories:
@@ -156,7 +214,7 @@ extract_data(document_id: "arxiv:2603.YYYYY", prompt: "Extract main results tabl
 | cs.CL | ~100 | LLMs, NLP, prompting, RAG, text generation, dialogue |
 | cs.LG | ~200 | Training methods, optimization, architectures, benchmarks |
 
-### Notable Papers in Collection
+### Notable Papers
 
 | ID | Title | Categories |
 |----|-------|-----------|
@@ -169,17 +227,17 @@ extract_data(document_id: "arxiv:2603.YYYYY", prompt: "Extract main results tabl
 | 2603.07379 | SoK: Agentic RAG | cs.AI, cs.CL |
 | 2603.10062 | Multi-Agent Memory from a Computer Architecture Perspective | cs.AI |
 
-Use `read_document(document_id: "arxiv:XXXX.XXXXX")` with any arxiv ID to check if it's available.
+Full list: see [`papers.json`](papers.json) (411 entries with IDs, titles, categories, PDF URLs).
 
 ## How It Works
 
 1. Papers collected from arxiv RSS feeds (cs.AI, cs.CL, cs.LG)
-2. PDFs downloaded and parsed with Docling on GPU (RTX 2070 SUPER)
+2. PDFs downloaded and parsed with Docling on GPU
 3. Full DoclingDocument exported (markdown + structured JSON with bboxes)
 4. Ingested into OkraPDF as public sources
 5. Queryable via MCP using `arxiv:XXXX.XXXXX` document ID format
 
-New papers are added regularly. The collection covers the latest 2 weeks of submissions.
+New papers added regularly. Collection covers the latest 2 weeks of submissions.
 
 ## Tips
 
@@ -189,3 +247,4 @@ New papers are added regularly. The collection covers the latest 2 weeks of subm
 - `extract_data` with JSON schemas is ideal for pulling benchmark tables programmatically
 - Cross-paper comparison: ask the same question to multiple papers and compare answers
 - If a paper isn't found, it may not be in the current snapshot — upload it yourself with `upload_document`
+- Use Semantic Scholar to find papers by topic, then query them here by arxiv ID
