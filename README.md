@@ -9,7 +9,7 @@ Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document cha
 npx skills add okrapdf/skills --all
 
 # Install specific skill
-npx skills add okrapdf/skills --skill okra-mcp
+npx skills add okrapdf/skills --skill okra
 
 # Install for specific agent
 npx skills add okrapdf/skills -a claude-code -g
@@ -19,15 +19,13 @@ npx skills add okrapdf/skills -a claude-code -g
 
 | Skill | Description |
 |-------|-------------|
-| [okra-mcp](skills/okra-mcp/) | Connect to OkraPDF via MCP — upload, read, ask, extract |
-| [okra-cli](skills/okra-cli/) | CLI-based PDF extraction, document chat, and collections |
-| [okra-curl](skills/okra-curl/) | HTTP/curl cookbook for the OkraPDF REST API |
-| [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv papers, SEC filings |
+| [okra](skills/okra/) | Upload PDFs, read content, ask questions, extract structured data, manage collections — via MCP, CLI, or HTTP |
+| [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv AI papers, SEC 10-K/10-Q filings |
 
 ## Quick Start
 
 1. Get an API key at [okrapdf.com](https://okrapdf.com)
-2. Install the skill: `npx skills add okrapdf/skills --skill okra-mcp -g`
+2. Install the skill: `npx skills add okrapdf/skills --skill okra -g`
 3. Add MCP config to your agent:
 
 ```json
