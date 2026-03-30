@@ -7,6 +7,8 @@ description: OkraPDF — upload PDFs, read extracted content, ask questions, ext
 
 Upload a PDF, get an API. Extract tables, ask questions, get structured JSON — via MCP, CLI, or HTTP.
 
+**Designed for subagents.** Every document is its own stateless endpoint. Fire off parallel queries to different documents — no shared state, no locks, no ordering issues. Ideal as a tool inside agent loops (Claude, GPT, custom orchestrators).
+
 ## Setup
 
 ### MCP (Claude Code, Cursor, OpenCode)
@@ -381,6 +383,84 @@ okra auth whoami
 ```bash
 curl "https://api.okrapdf.com/v1/documents?limit=20" -H "Authorization: Bearer $OKRA_API_KEY"
 ```
+
+---
+
+## Subagent & Parallel Patterns
+
+OkraPDF is built for agent-to-agent use. Each document is an isolated Durable Object with its own SQLite — queries to different documents never contend. Run them in parallel freely.
+
+### As tools inside an agent loop
+
+Map each document to a callable tool. The orchestrating agent picks which docs to query:
+
+```ts
+import { createOkra } from '@okrapdf/runtime';
+
+const okra = createOkra({ apiKey: process.env.OKRA_API_KEY! });
+
+const docs = [
+  { id: 'doc-abc123', label: 'NVIDIA 10-K' },
+  { id: 'doc-def456', label: 'AMD 10-K' },
+  { id: 'doc-ghi789', label: 'Intel 10-K' },
+];
+
+// Each doc becomes a tool the agent can call
+const sessions = Object.fromEntries(
+  docs.map((d) => [d.label, okra.sessions.from(d.id)]),
+);
+
+// Execute in parallel when agent calls multiple tools at once
+const results = await Promise.all(
+  toolCalls.map(tc => sessions[tc.name].prompt(tc.input.question))
+);
+```
+
+### Fan-out: same question across N documents
+
+```ts
+// SDK — fire all in parallel, collect answers
+const question = 'What was total revenue and YoY growth?';
+const answers = await Promise.all(
+  docIds.map(id => okra.sessions.from(id).prompt(question))
+);
+```
+
+```bash
+# curl — parallel background requests
+for doc_id in doc-abc123 doc-def456 doc-ghi789; do
+  curl -s -X POST "https://api.okrapdf.com/document/$doc_id/chat/completions" \
+    -H "Authorization: Bearer $OKRA_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"messages\": [{\"role\": \"user\", \"content\": \"$question\"}], \"stream\": false}" &
+done
+wait
+```
+
+```bash
+# CLI — multi-doc in one command
+okra chat "compare revenue" --doc doc-abc123,doc-def456,doc-ghi789
+```
+
+### MCP subagent pattern (Claude Code)
+
+When Claude Code spawns subagents, each can independently call OkraPDF MCP tools:
+
+```
+# Subagent 1: ask_document(document_id: "doc-abc123", question: "What was revenue?")
+# Subagent 2: ask_document(document_id: "doc-def456", question: "What was revenue?")
+# Subagent 3: ask_document(document_id: "doc-ghi789", question: "What was revenue?")
+# All run concurrently — no contention
+```
+
+### When to use which pattern
+
+| Pattern | Best for |
+|---------|----------|
+| **MCP tools** | Agent picks which docs to query dynamically |
+| **SDK `Promise.all`** | You know the doc set upfront, want max parallelism |
+| **Collections query** | Same question across a predefined group, server handles fan-out |
+| **`okra chat --doc`** | Quick CLI comparison of 2-5 docs |
 
 ---
 
