@@ -9,6 +9,8 @@ Pre-extracted SEC 10-K and 10-Q filings accessible via MCP. No API key needed â€
 
 ## Setup
 
+Add to `~/.claude/mcp.json` (Claude Code) or `.cursor/mcp.json` (Cursor):
+
 ```json
 {
   "mcpServers": {
@@ -20,7 +22,7 @@ Pre-extracted SEC 10-K and 10-Q filings accessible via MCP. No API key needed â€
 }
 ```
 
-No auth required. Public SEC filings, free to query.
+No API key, no auth header, no signup. Public SEC filings, completely free. Restart your agent after adding.
 
 ## Available Tools
 

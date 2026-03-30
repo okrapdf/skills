@@ -9,21 +9,32 @@ Upload a PDF, get an API. Extract tables, ask questions, get structured JSON —
 
 ## Setup
 
-Add to your agent's MCP config:
+### 1. Get an API key
+Sign up at [okrapdf.com](https://okrapdf.com) (free tier includes $5 credit). Go to Settings > API Keys > Create Key. Copy the key (starts with `okra_`).
 
+### 2. Add to your agent's MCP config
+
+**Claude Code** — edit `~/.claude/mcp.json` (create if it doesn't exist):
 ```json
 {
   "mcpServers": {
     "okra-pdf": {
       "type": "url",
       "url": "https://api.okrapdf.com/mcp",
-      "headers": { "Authorization": "Bearer YOUR_API_KEY" }
+      "headers": { "Authorization": "Bearer okra_YOUR_KEY_HERE" }
     }
   }
 }
 ```
 
-Get an API key at [okrapdf.com](https://okrapdf.com). Free tier includes $5 credit.
+**Cursor** — edit `.cursor/mcp.json` in your project root (same JSON format).
+
+**OpenCode / other agents** — add the same `mcpServers` block to your agent's MCP config file.
+
+### 3. Verify
+Restart your agent, then ask it: "List my OkraPDF documents." If it returns an empty list (or your docs), you're connected.
+
+**Tip:** Store the key in an env var (`OKRA_API_KEY`) and reference it in the config to avoid hardcoding secrets.
 
 ## Available Tools
 
@@ -121,16 +132,21 @@ list_documents(limit: 20)
 ## Common Workflows
 
 ### Extract tables from a financial report
-1. `upload_document(url: "https://example.com/10k.pdf", wait: true)`
-2. `extract_data(document_id: "doc-xxx", prompt: "Extract the income statement", json_schema: {...})`
+1. `upload_document(url: "https://example.com/10k.pdf", wait: true)` — returns `{"document_id": "doc-abc123", "phase": "complete", ...}`
+2. `extract_data(document_id: "doc-abc123", prompt: "Extract the income statement", json_schema: {...})` — use the document_id from step 1
 
 ### Q&A over a research paper
-1. `upload_document(url: "https://arxiv.org/pdf/2307.09288")`
-2. `ask_document(document_id: "doc-xxx", question: "What is the main contribution?")`
+1. `upload_document(url: "https://arxiv.org/pdf/2307.09288")` — returns document_id
+2. `ask_document(document_id: "doc-xxx", question: "What is the main contribution?")` — wait for phase=complete first
 
 ### Read specific pages
 1. `read_document(document_id: "doc-xxx", pages: "1-3")` — just the intro
 2. `read_document(document_id: "doc-xxx", pages: "45-50")` — financial statements
+
+### End-to-end: upload, wait, ask
+1. `upload_document(url: "https://arxiv.org/pdf/2307.09288", wait: true)` — blocks until extraction finishes
+2. `get_document_status(document_id: "doc-xxx")` — confirm phase is "complete"
+3. `ask_document(document_id: "doc-xxx", question: "Summarize the key findings")`
 
 ## URL Resolution
 
@@ -139,9 +155,17 @@ list_documents(limit: 20)
 - `arxiv:2307.09288` — Arxiv paper (auto-resolved via public sources)
 - `https://arxiv.org/pdf/2307.09288` — Any registered public PDF URL
 
+## Important: Document Must Be Ready
+
+Tools like `read_document`, `ask_document`, and `extract_data` require the document to be fully processed (phase = "complete"). If you just uploaded, either:
+- Use `wait: true` on `upload_document` (recommended), or
+- Poll `get_document_status` until phase is "complete"
+
+Calling these tools on a document still in "extracting" phase will return incomplete or empty results.
+
 ## Notes
 
 - Documents are processed asynchronously. Use `wait: true` or poll `get_document_status`.
 - `read_document` output truncated at ~100k chars. Use `pages` param for large docs.
-- `extract_data` works best on documents under ~100 pages.
+- `extract_data` works best on documents under ~100 pages. Over 100 pages, results may be incomplete — use `pages` param to target specific sections.
 - Page images available at `https://res.okrapdf.com/v1/documents/{id}/pg_N.png`
