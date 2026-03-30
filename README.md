@@ -20,10 +20,9 @@ npx skills add okrapdf/skills -a claude-code -g
 | Skill | Description |
 |-------|-------------|
 | [okra-mcp](skills/okra-mcp/) | Connect to OkraPDF via MCP — upload, read, ask, extract |
-| [okra-cli](skills/okra-cli/) | CLI-based PDF extraction and document management |
+| [okra-cli](skills/okra-cli/) | CLI-based PDF extraction, document chat, and collections |
 | [okra-curl](skills/okra-curl/) | HTTP/curl cookbook for the OkraPDF REST API |
-| [okra-collections](skills/okra-collections/) | Multi-document queries and collection management |
-| [okra-sec-filings](skills/okra-sec-filings/) | Zero-auth MCP for public SEC 10-K/10-Q filings |
+| [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv papers, SEC filings |
 
 ## Quick Start
 

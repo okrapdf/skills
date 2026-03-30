@@ -113,19 +113,38 @@ okra search doc-abc123 "revenue"
 
 ```bash
 # List collections
-okra collections list
+okra collections list                          # or: okra col ls
 
-# Create collection
-okra collections create --name "Q4 Reports"
+# Create collection (with optional seed docs)
+okra collections create "Q4 Earnings" -d "Quarterly filings" --docs doc-abc123,doc-def456
+
+# Show collection details
+okra collections show "Q4 Earnings"
 
 # Add documents
-okra collections add-docs col-xxx doc-abc123 doc-def456
+okra collections add "Q4 Earnings" doc-ghi789
 
-# Query across collection
-okra collections query col-xxx "Compare revenue growth across all companies"
+# Remove documents (keeps the docs in your account)
+okra collections remove "Q4 Earnings" doc-abc123
 
-# Export collection data
-okra collections export col-xxx
+# Delete collection (preserves documents)
+okra collections delete "Q4 Earnings"
+```
+
+### Multi-Document Chat
+
+Use `-c` to scope chat to a collection, or `--doc` for ad-hoc multi-doc queries:
+
+```bash
+# Chat with a collection
+okra chat -c "Q4 Earnings" -m "Compare revenue across companies"
+
+# Ad-hoc: compare specific documents
+okra chat "compare the revenue figures" --doc doc-abc123,doc-def456
+
+# Grab 5 most recent docs and compare
+JOBS=$(okra jobs list --jq '[.[] | select(.status=="completed")] | .[0:5] | map(.job_id) | join(",")' | tr -d '"')
+okra chat "what are the common themes?" --doc "$JOBS"
 ```
 
 ### Auth

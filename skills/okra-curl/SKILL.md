@@ -181,20 +181,123 @@ curl https://api.okrapdf.com/v1/documents/doc-abc123/entities \
 
 ## Collections
 
-### Create
+Group documents and query across all of them at once.
+
+### Create (with optional seed documents)
 ```bash
 curl -X POST https://api.okrapdf.com/v1/collections \
   -H "Authorization: Bearer $OKRA_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Q4 Reports"}'
+  -d '{
+    "name": "Q4 Earnings",
+    "description": "Quarterly earnings reports",
+    "document_ids": ["doc-abc123", "doc-def456"]
+  }'
 ```
 
-### Query across documents (NDJSON streaming)
+### Add documents
+```bash
+curl -X POST https://api.okrapdf.com/v1/collections/col-xxx/documents \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"document_ids": ["doc-ghi789"]}'
+```
+
+### Query across documents
+
+Two query modes:
+
+| Mode | Behavior | Best for |
+|------|----------|----------|
+| `fanout` (default) | Separate completion per document, NDJSON stream | Per-document answers, structured extraction |
+| `sandbox` | Single LLM with grep/Python over all docs | Cross-document search, comparisons, aggregation |
+
+**Fanout (default):**
 ```bash
 curl -X POST https://api.okrapdf.com/v1/collections/col-xxx/query \
   -H "Authorization: Bearer $OKRA_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Compare revenue growth across all companies"}'
+  -d '{"query": "What was total revenue in Q4?"}'
+```
+
+Fanout NDJSON response events:
+```
+{"type":"start","query_id":"...","doc_count":7}
+{"type":"result","doc_id":"doc-xxx","answer":"Apple reported revenue of..."}
+{"type":"done","completed":7,"failed":0}
+```
+
+**Sandbox mode:**
+```bash
+curl -X POST https://api.okrapdf.com/v1/collections/col-xxx/query \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Compare R&D spending across all companies. Show a table.",
+    "mode": "sandbox"
+  }'
+```
+
+Sandbox returns a single JSON response:
+```json
+{
+  "answer": "Based on the 10-K filings...",
+  "model": "moonshotai/kimi-k2.5",
+  "mode": "sandbox",
+  "usage": {"inputTokens": 19364, "outputTokens": 1804, "costUsd": 0.005},
+  "tool_calls": 5,
+  "duration_ms": 78166
+}
+```
+
+### Get collection
+```bash
+curl https://api.okrapdf.com/v1/collections/col-xxx \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+```
+
+### List collections
+```bash
+curl https://api.okrapdf.com/v1/collections \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+```
+
+### Remove documents
+```bash
+curl -X DELETE https://api.okrapdf.com/v1/collections/col-xxx/documents \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"document_ids": ["doc-abc123"]}'
+```
+
+### Export collection
+```bash
+# NDJSON stream (default)
+curl -N "https://api.okrapdf.com/v1/collections/col-xxx/export?format=markdown" \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+
+# Zip archive
+curl -L "https://api.okrapdf.com/v1/collections/col-xxx/export?format=zip" \
+  -H "Authorization: Bearer $OKRA_API_KEY" -o collection.zip
+```
+
+### Delete collection (preserves documents)
+```bash
+curl -X DELETE https://api.okrapdf.com/v1/collections/col-xxx \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+```
+
+### Fan-out pattern (scripting)
+
+For maximum control, query individual documents in parallel:
+```bash
+for doc_id in doc-abc123 doc-def456 doc-ghi789; do
+  curl -s -X POST "https://api.okrapdf.com/document/$doc_id/chat/completions" \
+    -H "Authorization: Bearer $OKRA_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"messages\": [{\"role\": \"user\", \"content\": \"What was total revenue?\"}], \"stream\": false}" &
+done
+wait
 ```
 
 ## List Documents
