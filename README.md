@@ -1,6 +1,8 @@
 # OkraPDF Agent Skills
 
-Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document chat, and structured data extraction.
+Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document chat, structured data extraction, and wiki generation.
+
+OkraPDF turns PDFs into structured, queryable document objects. These skills teach AI agents how to use those objects — so you can say "extract all tables from this 10-K" or "turn this paper collection into a wiki" and the agent knows the right API calls, patterns, and trade-offs.
 
 ## Install
 
@@ -23,6 +25,7 @@ npx skills add okrapdf/skills -a claude-code -g
 | [okra-cli](skills/okra-cli/) | CLI-based PDF extraction, document chat, and collections |
 | [okra-curl](skills/okra-curl/) | HTTP/curl cookbook for the OkraPDF REST API |
 | [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv papers, SEC filings |
+| [okra-wiki](skills/okra-wiki/) | Generate a static wiki from a collection — export, synthesize, deploy |
 
 ## Quick Start
 
