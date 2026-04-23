@@ -7,6 +7,8 @@ description: OkraPDF CLI for PDF extraction, document chat, table export, entity
 
 Extract PDFs, chat with documents, query tables, and manage collections from the command line.
 
+Need passive file storage without starting processing? The CLI commands here are workflow-bound. Use the `okra-curl` skill and `POST /v1/files` for asset-only uploads.
+
 ## Install
 
 ```bash

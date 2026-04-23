@@ -41,6 +41,8 @@ Restart your agent, then ask it: "List my OkraPDF documents." If it returns an e
 ### upload_document
 Upload a PDF from a URL. Returns document ID and processing status.
 
+This tool is workflow-bound: it creates a document and starts processing. If you need passive file storage first, use the `okra-curl` skill and the `/v1/files` REST endpoints instead.
+
 ```
 upload_document(url: "https://example.com/report.pdf")
 upload_document(url: "https://arxiv.org/pdf/2307.09288", wait: true)

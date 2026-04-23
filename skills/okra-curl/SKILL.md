@@ -1,6 +1,6 @@
 ---
 name: okra-curl
-description: HTTP/curl cookbook for the OkraPDF REST API — upload PDFs, chat completions, structured extraction, collections, and exports.
+description: HTTP/curl cookbook for the OkraPDF REST API — workflow-bound document uploads, passive file assets, chat completions, structured extraction, collections, and exports.
 ---
 
 # OkraPDF HTTP API
@@ -16,7 +16,14 @@ Authorization: Bearer YOUR_API_KEY
 
 Base URL: `https://api.okrapdf.com`
 
-## Upload a PDF
+## Choose the right upload surface
+
+- `POST /v1/documents` — upload and immediately start Okra processing (OCR, chat, exports, entities)
+- `POST /v1/files` — store a PDF as a passive asset without binding it to a workflow
+
+Use `documents` when you want the PDF parsed right away. Use `files` when you want Cloudinary-style storage first and will decide later what to do with the PDF.
+
+## Upload and process a document
 
 ### From URL
 ```bash
@@ -47,6 +54,85 @@ Response:
   "pages_total": 42
 }
 ```
+
+## Passive file assets
+
+Store the original PDF without starting OCR or document lifecycle workflows.
+
+### Upload from file (multipart)
+```bash
+curl -X POST https://api.okrapdf.com/v1/files \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -F "file=@report.pdf;type=application/pdf"
+```
+
+Response:
+```json
+{
+  "id": "doc-file123",
+  "object": "file",
+  "name": "report.pdf",
+  "mime": "application/pdf",
+  "size": 1048576,
+  "upload_mode": "multipart",
+  "workflow_bound": false,
+  "urls": {
+    "bytes": "https://api.okrapdf.com/v1/files/doc-file123/bytes"
+  }
+}
+```
+
+### List files
+```bash
+curl "https://api.okrapdf.com/v1/files?limit=20" \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+```
+
+### Download original PDF bytes
+```bash
+curl "https://api.okrapdf.com/v1/files/doc-file123/bytes" \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -o report.pdf
+```
+
+### Delete a stored file
+```bash
+curl -X DELETE "https://api.okrapdf.com/v1/files/doc-file123" \
+  -H "Authorization: Bearer $OKRA_API_KEY"
+```
+
+### Large PDFs: direct-to-R2 upload
+
+Use this when you want the browser or client to upload bytes straight to R2 instead of proxying the whole PDF through Okra's Worker.
+
+```bash
+FILE=report.pdf
+SHA256=$(shasum -a 256 "$FILE" | awk '{print $1}')
+FILE_SIZE=$(stat -f '%z' "$FILE")
+
+PRESIGN=$(curl -s -X POST https://api.okrapdf.com/v1/files/presign \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"fileName\":\"report.pdf\",\"fileSize\":$FILE_SIZE,\"sha256\":\"$SHA256\"}")
+
+FILE_ID=$(echo "$PRESIGN" | jq -r '.id')
+UPLOAD_URL=$(echo "$PRESIGN" | jq -r '.upload_url')
+CONTENT_TYPE=$(echo "$PRESIGN" | jq -r '.upload_headers["Content-Type"]')
+
+curl -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: $CONTENT_TYPE" \
+  --data-binary "@$FILE"
+
+curl -X POST https://api.okrapdf.com/v1/files/finalize \
+  -H "Authorization: Bearer $OKRA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"id\":\"$FILE_ID\",\"fileName\":\"report.pdf\",\"sha256\":\"$SHA256\"}"
+```
+
+Notes:
+- Use exactly the returned `upload_headers`. Today that is just `Content-Type`.
+- `POST /v1/files/presign` plus `PUT` plus `POST /v1/files/finalize` is the raw HTTP flow. The SDK hides this behind one `files.upload()` call.
+- `workflow_bound: false` means the file is stored but not processed yet.
 
 ## Check Status
 
