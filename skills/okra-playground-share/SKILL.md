@@ -83,14 +83,22 @@ curl -X DELETE https://okrapdf.com/api/playground/session \
 
 ## Step 2 — Provide a document
 
-**Option A — use a built-in seed doc.** Zero setup. The catalog is fixed
-in server code; current seeds (verified 2026-04):
+**Option A — use a built-in seed doc.** Zero setup. The catalog is rotated
+periodically by the server. Always discover the current set from the
+`POST /session` response — the response includes a `documents` array of
+seed docs with `doc_id`, `file_name`, `pages_total`, and `description`.
 
-| docId | file | pages |
-|---|---|---|
-| `doc-0552aef6712b412782ade6ee1788d0b9` | 3M 10-K excerpt with tables | 11 |
-| `doc-c2fe6dc4299e4c999df8` | Full 3M 2018 10-K | 160 |
-| `doc-8356d5bac7ae43d59bbd` | AMD 2022 10-K | 121 |
+```bash
+curl -s -X POST https://okrapdf.com/api/playground/session \
+  -H 'content-type: application/json' -d '{}' \
+  | jq '.documents | map({doc_id, file_name, pages_total})'
+```
+
+As of 2026-04 the seeds are ParseBench slices (Apple, Goldman Sachs,
+Home Depot, Coca-Cola, ExxonMobil 10-Ks plus OECD/IEA reports). Older
+docIds like `doc-0552aef6712b412782ade6ee1788d0b9` (3M 10-K excerpt)
+may still resolve directly, but rely on the session response for the
+authoritative current catalog.
 
 Seed docs auto-resolve — no `/upload` step, just pass the docId into
 `/compare` and `/shares`.
@@ -222,22 +230,43 @@ Rules:
 curl https://okrapdf.com/api/playground/shares/pgs_w3wfl5zsnnt2iuJpFspC8a_8s-J-7l5c
 ```
 
-Returns the full snapshot — doc metadata, facets (nodes / cost / elapsed),
-token, expiry. Cached 60s. The browser-facing URL is the same token on
-the `/playground/share/` path.
+Returns the full snapshot. Response shape (verified 2026-04):
+```jsonc
+{
+  "version": 1,
+  "createdAt": "2026-04-21T...",
+  "creatorSessionId": "...",
+  "docId": "doc-...",
+  "docSource": "seed",
+  "fileName": "...",
+  "pagesTotal": 11,
+  "facets": [ /* per-variant nodes/cost/elapsed/error */ ],
+  "totalCostUsd": 0.04125,
+  "elapsedMs": 3859,
+  "expiresAt": "2026-04-28T..."
+}
+```
+
+Note: `token` and `url` are returned by `POST /shares` (the publish call),
+NOT by this read endpoint — re-derive the URL from the path token if
+needed (`https://okrapdf.com/playground/share/<token>`). Cached 60s. The
+browser-facing URL is the same token on the `/playground/share/` path.
 
 ## Built-in facet variant IDs
 
-| Provider | Variant IDs | Seed | Uploaded |
-|---|---|---|---|
-| Okra textlayer | `textlayer` | — | ✓ |
-| LlamaParse | `llamaparse-fast`, `llamaparse-premium`, `llamaparse-agentic` | ✓ | ✓ |
-| Unstructured | `unstructured` | — | ✓ (if provider creds configured) |
-| Mistral OCR | `mistral-ocr-latest` | — | BYOK |
-| Reducto | `reducto-parse` | — | BYOK |
+The provider catalog has expanded substantially — as of 2026-04 the live
+list (verified via `GET /plugins`) includes 18 variants: `textlayer`,
+`llamaparse-fast`, `llamaparse-premium`, `llamaparse-agentic`,
+`unstructured`, `google-document-ai-ocr`, `mistral-ocr`,
+`mistral-ocr-annotated`, `reducto-parse`, `reducto-agentic`, `mineru`,
+`gemini-3-flash-minimal`, `gemini-3-flash-high`, `gemini-3.1-pro`,
+`gemini-3.1-flash-lite`, `azure-di-layout`, `chandra-ocr`,
+`chandra-ocr-raw`.
 
-Always confirm via `GET /plugins` for the current session — gated
-providers don't surface when unconfigured.
+**Always confirm via `GET /plugins?docId=<doc>` for the current session
++ doc** — the catalog rotates as new vendors are added, and gated
+providers don't surface when unconfigured. Don't hardcode this list;
+read it at runtime.
 
 ## Limits & gotchas
 
