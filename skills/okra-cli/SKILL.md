@@ -3,6 +3,12 @@ name: okra-cli
 description: OkraPDF CLI for PDF extraction, document chat, table export, entity queries, and collection management from the terminal.
 ---
 
+> **TODO 2026-04-24 — drifted from CLI v0.14.0.** This SKILL.md documents commands that don't exist in the shipped CLI, including `okra run`, `okra entities`, `okra query`, `okra jobs`, `okra chat send`, `okra chat view`, `okra page get`, `okra extract --processor`, `okra extract --tables-only`, `okra extract --text-only`, `okra extract -d`, `okra extract --images`. v0.14 deliberately hides advanced commands behind a "clean-house RC" gate.
+>
+> **What v0.14 actually promotes:** `auth`, `upload`, `extract` (with `--schema` only), `chat` (with `--doc <id>`), `list`/`ls`, `delete`/`rm`, `read`, `collection query`. See the v0.14 milestone description in `okrapdf/cli`.
+>
+> **Fix plan:** rewrite this skill to match v0.14 promoted surface; move advanced/hidden commands into a separate `okra-cli-advanced` skill or a v0.14.1+ section gated by a feature flag. Don't trust the examples below until this TODO is cleared.
+
 # OkraPDF CLI
 
 Extract PDFs, chat with documents, query tables, and manage collections from the command line.
