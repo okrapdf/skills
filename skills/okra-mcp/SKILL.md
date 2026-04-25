@@ -3,6 +3,16 @@ name: okra-mcp
 description: Connect to OkraPDF via MCP to upload PDFs, read extracted content, ask questions, and extract structured data with JSON schemas.
 ---
 
+> **TODO 2026-04-24 — drifted from live MCP server at `https://api.okrapdf.com/mcp`.** Endpoint is healthy (initialize + tools/list both 200), and the setup config in this skill is correct. **But the documented tool catalog is wrong.**
+>
+> SKILL.md claims 6 tools: `upload_document`, `read_document`, `ask_document`, `extract_data`, `get_document_status`, `list_documents`.
+>
+> Live `tools/list` actually returns 3 tools: `upload_document` ✓, `describe_collection` (new), and `execute_code` (new — JS over a `DOCS` API with SQLite/FTS querying — this replaces the granular read/ask/extract/status/list pattern).
+>
+> **Why this matters:** an agent following the SKILL.md examples will hit `tool not found` errors on 5 of the 6 documented tools. The new `execute_code` flow is more powerful but completely undocumented here.
+>
+> **Fix plan:** rewrite Available Tools + Examples sections around `execute_code` + `describe_collection`. Also note that this skill is currently **excluded from the public README** (since 2026-04-24) until the rewrite lands. Don't trust the tool examples below until this TODO is cleared.
+
 # OkraPDF MCP
 
 Upload a PDF, get an API. Extract tables, ask questions, get structured JSON — all through MCP.
