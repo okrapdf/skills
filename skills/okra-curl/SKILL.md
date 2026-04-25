@@ -141,7 +141,10 @@ curl https://api.okrapdf.com/v1/documents/doc-abc123/status \
   -H "Authorization: Bearer $OKRA_API_KEY"
 ```
 
-Response: `{"phase": "complete", "page_count": 42, "total_nodes": 318}`
+Response (key fields, abbreviated — full payload includes spec, capabilities, cache, etc.):
+```json
+{"documentId":"doc-abc123","phase":"complete","pagesCompleted":42,"pagesTotal":42,"totalNodes":318,"verifiedNodes":318,"fileName":"report.pdf","pdfSha256":"..."}
+```
 
 ## Read Content
 
