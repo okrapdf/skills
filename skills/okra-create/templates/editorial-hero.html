@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+  /* Template: editorial-hero
+     Slots (substitute into a builder function later):
+       --brand, --issue-meta, --kicker, --hero-text, --hero-asterisk,
+       --hero-caption-eyebrow, --hero-caption, --title, --lede,
+       --toc[], --footer-left, --footer-right, --accent
+     Layout guarantee: CSS Grid rows = no overlap possible. */
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+  /* Lock the print page to exact A4 pixels so Chrome doesn't scale
+     our 794×1123 layout. Must be first CSS rule for reliability. */
+  @page { size: 794px 1123px; margin: 0; }
+
+  :root {
+    --bg: #F4EEDF;
+    --ink: #1A1A1A;
+    --muted: #5E5444;
+    --rule: #C0B6A0;
+    --accent: #8B3A22;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 794px; height: 1123px; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top-level grid: each row has a fixed or bounded height.
+       No absolute positioning, no overlaps. ────────────────── */
+  .page {
+    width: 794px; height: 1123px;
+    padding: 50px 60px 40px;
+    display: grid;
+    grid-template-rows:
+      auto         /* masthead */
+      auto         /* kicker */
+      auto         /* hero */
+      auto         /* title */
+      auto         /* lede */
+      1fr          /* flexible spacer eats leftover */
+      auto         /* toc */
+      auto;        /* footer */
+    row-gap: 18px;
+    overflow: hidden;
+  }
+
+  /* ── Masthead ────────────────────────────────── */
+  .masthead {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 12px; border-bottom: 1px solid var(--rule);
+  }
+  .brand {
+    font-family: 'EB Garamond', serif;
+    font-weight: 600; font-size: 22px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .issue-meta {
+    font-size: 10.5px; font-weight: 500; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ── Kicker eyebrow ─────────────────────────── */
+  .kicker {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.34em;
+    text-transform: uppercase; color: var(--accent);
+    margin-top: 22px;
+  }
+
+  /* ── Hero block: giant display + caption column side-by-side.
+       Own internal grid; nothing escapes the row. ──────────── */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;  /* minmax(0,…) prevents expansion */
+    column-gap: 24px;
+    align-items: end;
+    padding-top: 8px;
+    min-width: 0;
+  }
+  .hero-text {
+    font-family: 'EB Garamond', serif;
+    font-size: 196px; font-weight: 500;
+    line-height: 0.86; letter-spacing: -0.045em;
+    color: var(--ink);
+    align-self: end;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .hero-text .asterisk {
+    color: var(--accent); font-weight: 500;
+  }
+  .hero-caption {
+    text-align: right;
+    padding-bottom: 18px;
+  }
+  .hero-caption .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .hero-caption p {
+    font-size: 11.5px; line-height: 1.55; color: var(--muted);
+    letter-spacing: 0.005em;
+  }
+  .hero-caption em { font-style: italic; color: var(--ink); font-weight: 500; }
+
+  /* ── Title + lede ───────────────────────────── */
+  .title {
+    font-family: 'EB Garamond', serif;
+    font-size: 60px; font-weight: 500;
+    line-height: 1.0; letter-spacing: -0.015em;
+    max-width: 540px;
+  }
+  .title em { font-style: italic; font-weight: 400; }
+  .lede {
+    font-family: 'EB Garamond', serif;
+    font-size: 17px; line-height: 1.5; color: #2B2B2B;
+    font-style: italic; font-weight: 400;
+    max-width: 460px;
+  }
+
+  /* ── TOC ────────────────────────────────────── */
+  .toc-wrap {
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+  .toc-label {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .toc {
+    list-style: none; padding: 0; margin: 0;
+    font-family: 'EB Garamond', serif;
+    font-size: 14.5px; line-height: 1.95; color: #2B2B2B;
+  }
+  .toc li { display: flex; gap: 18px; }
+  .toc .num {
+    flex: 0 0 32px; color: var(--accent);
+    font-weight: 700; font-variant-numeric: tabular-nums;
+    font-family: 'Inter Tight', sans-serif; font-size: 11.5px;
+    padding-top: 5px;
+  }
+  .toc em { font-style: italic; }
+
+  /* ── Footer ─────────────────────────────────── */
+  .footer {
+    display: flex; justify-content: space-between; align-items: end;
+    padding-top: 12px; border-top: 1px solid var(--rule);
+    font-size: 10px; font-weight: 500; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .footer strong { color: var(--ink); font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="masthead">
+      <div class="brand">Parseable</div>
+      <div class="issue-meta">Issue 01 &nbsp;·&nbsp; Spring 2026</div>
+    </div>
+
+    <div class="kicker">The Benchmarks Report</div>
+
+    <div class="hero">
+      <div class="hero-text">84.88<span class="asterisk">*</span></div>
+      <div class="hero-caption">
+        <div class="eyebrow">LlamaParse Agentic</div>
+        <p>Overall score on ParseBench — highest result across 39 methods and six capability axes. <em>*first reading above 80.</em></p>
+      </div>
+    </div>
+
+    <h1 class="title">The <em>84.88</em> problem.</h1>
+    <p class="lede">One method leads ParseBench. Nothing has crossed 85. A year of document-extraction results, in charts and disbelief.</p>
+
+    <div class="toc-wrap">
+      <div class="toc-label">In this issue</div>
+      <ol class="toc">
+        <li><span class="num">01</span><span>The top ten, ranked and read.</span></li>
+        <li><span class="num">02</span><span>The cost-effectiveness <em>pareto</em> — who wins under a penny.</span></li>
+        <li><span class="num">03</span><span>Specialized parsers vs. vision-language models, by the numbers.</span></li>
+        <li><span class="num">04</span><span>Outliers worth flagging — the capability potholes.</span></li>
+        <li><span class="num">05</span><span>Recommendations for the workload in front of you.</span></li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      <div><strong>Parseable</strong> &nbsp;&nbsp; N=39 methods</div>
+      <div>Okrapdf &nbsp;·&nbsp; Document Benchmarks</div>
+    </div>
+
+  </div>
+</body>
+</html>
