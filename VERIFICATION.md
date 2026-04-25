@@ -21,9 +21,13 @@ Started 2026-04-24. Verifies that each skill in `skills/` works as the README cl
 | okra-public-docs | ⚠️ drifted | 2026-04-24 | `papers.json` (3400-line arxiv manifest) ✓. **Both MCP paths broken/drifted:** (1) auth MCP `api.okrapdf.com/mcp` healthy but missing `read_document`/`ask_document`/`extract_data` tools used in arxiv examples (catalog drift, see okra-mcp); (2) zero-auth SEC MCP `mcp.okrapdf.com/mcp` returns 404 "App 'mcp' not found" — endpoint is DEAD. Probed alternates: `sec.okrapdf.com/mcp` 404, `api.okrapdf.com/sec/mcp` 404, `api.okrapdf.com/v1/sec/mcp` 401 (exists but auth-required, not zero-auth). TODO filed. |
 | okra-wiki | ✅ works | 2026-04-24 | Smoke-tested 3 building blocks: `GET /v1/collections/<id>` 200 with all documented keys (`name`, `documents`, `document_count`, etc.), `GET /v1/collections/<id>/export?format=markdown` 200 streaming NDJSON `{type:"start"}` + `{type:"result", doc_id, file_name, pages:[{pageNumber, content}]}` (matches SKILL.md jq filter), `POST /v1/sandbox/run` 200 with `apiKey + code` returning `{ok, result, logs, runId, run:{id, status, publish, get, delete, embedUrl}}` and `await DOCS.list()` works inside (returned 100 docs). Did NOT smoke-test `/collections/<id>/query` or `/document/<id>/chat/completions` — LLM burn; same endpoints already verified via okra-curl. |
 
-## Cross-check vs README (2026-04-24)
+## 2026-04-24 — surface reduced to API-first JTBDs
 
-`skills/` directory holds 7 skills; README advertises 6:
+After the audit below completed, the surface was pruned to two skills (`okra-curl`, `okra-create`). The other five (`okra-cli`, `okra-mcp`, `okra-playground-share`, `okra-public-docs`, `okra-wiki`) were deleted from `skills/` and moved to `ROADMAP.md` with explicit un-defer prerequisites. The audit notes below are kept as the historical reason each was removed.
+
+## Cross-check vs README (2026-04-24, pre-prune)
+
+`skills/` directory held 7 skills; README advertised 6:
 
 | Skill | In `skills/` | In README | OK? |
 |---|:---:|:---:|---|

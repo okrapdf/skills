@@ -1,39 +1,37 @@
 # OkraPDF Agent Skills
 
-Agent skills for [OkraPDF](https://okrapdf.com) — PDF extraction, document chat, structured data extraction, designed PDF generation, and wiki creation.
+Agent skills for the [OkraPDF API](https://api.okrapdf.com). Two JTBDs, both API-first.
 
-OkraPDF turns PDFs into structured, queryable document objects. These skills teach AI agents how to use those objects — so you can say "extract all tables from this 10-K" or "turn this paper collection into a wiki" and the agent knows the right API calls, patterns, and trade-offs.
+## Skills
+
+| JTBD | Skill | What it teaches |
+|------|-------|-----------------|
+| Get a completion endpoint on a PDF, fast | [okra-curl](skills/okra-curl/) | `curl` cookbook for `POST /v1/documents` → OpenAI-compatible `POST /document/{id}/chat/completions`, structured extraction with `response_format`, exports, page images. The fastest path from "I have a PDF" to "I have an API." |
+| Generate a designed PDF from an agent | [okra-create](skills/okra-create/) | `POST /render` (baked design system) + `POST /browser/html-to-pdf` (custom HTML cover) + `POST /codemode/run` (composed). One Worker, three modes. |
 
 ## Install
 
 ```bash
-# Install all skills
+# Both skills
 npx skills add okrapdf/skills --all
 
-# Install specific skill
-npx skills add okrapdf/skills --skill okra-cli
+# Just one
+npx skills add okrapdf/skills --skill okra-curl
+npx skills add okrapdf/skills --skill okra-create
 
-# Install for specific agent
+# For a specific agent (Claude Code, Cursor, OpenCode...)
 npx skills add okrapdf/skills -a claude-code -g
 ```
 
-## Skills
-
-| Skill | Description |
-|-------|-------------|
-| [okra-cli](skills/okra-cli/) | CLI-based PDF extraction, document chat, and collections |
-| [okra-create](skills/okra-create/) | Generate designed PDFs via the OkraPDF render agent |
-| [okra-curl](skills/okra-curl/) | HTTP/curl cookbook for the OkraPDF REST API, including passive file assets |
-| [okra-playground-share](skills/okra-playground-share/) | Create shareable `pgs_...` playground links — upload a PDF, run plugins, publish an immutable snapshot |
-| [okra-public-docs](skills/okra-public-docs/) | Pre-extracted public docs — arxiv papers, SEC filings |
-| [okra-wiki](skills/okra-wiki/) | Generate a static wiki from a collection — export, synthesize, deploy |
-
-## Quick Start
+## Quick start
 
 1. Get an API key at [okrapdf.com](https://okrapdf.com)
-2. Install a skill: `npx skills add okrapdf/skills --skill okra-cli -g`
-3. Set `OKRAPDF_API_KEY` in your environment
-4. Ask your agent: "Upload this PDF and extract all tables"
+2. `export OKRA_API_KEY=okra_...`
+3. Pick a JTBD above; the SKILL.md has copy-pasteable curl examples.
+
+## Deferred
+
+The full agent surface (CLI wrappers, MCP integration, playground share links, public-docs corpora, wiki generation) is roadmapped — see [`ROADMAP.md`](ROADMAP.md). API-first comes first; agent ergonomics layer on after.
 
 ## Links
 
