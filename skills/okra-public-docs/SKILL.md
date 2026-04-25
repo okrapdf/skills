@@ -3,6 +3,15 @@ name: okra-public-docs
 description: Query pre-extracted public documents via OkraPDF MCP — arxiv AI papers, SEC 10-K/10-Q filings, and more. Read, ask questions, extract structured data. No upload needed.
 ---
 
+> **TODO 2026-04-24 — both MCP integration paths in this skill are drifted/broken.**
+>
+> 1. **Authenticated MCP (`api.okrapdf.com/mcp`).** Tool catalog drift — see TODO at top of `okra-mcp/SKILL.md`. The arxiv examples below call `read_document`, `ask_document`, `extract_data` which don't exist on the live server. Live tools are `upload_document`, `describe_collection`, `execute_code`. Arxiv corpus access likely needs to be re-expressed via `execute_code` with `public_doc_ids: ["arxiv:..."]`.
+> 2. **Zero-auth SEC MCP (`mcp.okrapdf.com/mcp`).** Endpoint is **DEAD** — returns 404 "App 'mcp' not found". Probed alternatives `mcp.okrapdf.com`, `sec.okrapdf.com/mcp`, `api.okrapdf.com/sec/mcp` (all 404), and `api.okrapdf.com/v1/sec/mcp` (401, exists but auth-required so not zero-auth as advertised). All `read_filing_index`, `read_filing_contents`, `ask_question`, `get_verification_summary`, `verify_pages` examples below will fail until the SEC MCP host is restored.
+>
+> **Static manifest still valid:** `papers.json` (3400-line arxiv corpus listing) is present and parseable.
+>
+> **Fix plan:** rewrite arxiv section against `execute_code` + `public_doc_ids`; either restore the zero-auth SEC MCP endpoint or rewrite the SEC section against the authenticated path; update channel table accordingly. Don't trust the tool examples below until this TODO is cleared.
+
 # OkraPDF Public Documents
 
 Pre-extracted public document corpora queryable via MCP. No upload, no waiting — documents are already parsed and indexed. Just pass an ID and start asking questions.
